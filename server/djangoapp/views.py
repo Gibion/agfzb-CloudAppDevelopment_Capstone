@@ -121,7 +121,7 @@ def get_dealer_details(request, id):
          dealer = get_dealer_by_id_from_cf(dealer_url, id = id)
          context['dealer'] = dealer
 
-         review_url = "https://zkajdan-5000.theiadocker-2-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/api/get_reviews"
+         review_url = "https://gibionmakiwa-3000.theiadockernext-1-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/dealerships/get"
          reviews = get_dealer_reviews_from_cf(review_url, id = id)
          print(reviews)
          context['reviews'] = reviews
@@ -133,7 +133,7 @@ def get_dealer_details(request, id):
 # ...
 def add_review(request, id):
     context = {}
-    dealer_url = "https://us-south.functions.appdomain.cloud/api/v1/web/f3e16eb9-b4fa-4e9e-8897-ee1d90c7eacc/dealership-package/get-dealership"
+    dealer_url = "https://gibionmakiwa-3000.theiadockernext-1-labs-prod-theiak8s-4-tor01.proxy.cognitiveclass.ai/dealerships/get"
     dealer = get_dealer_by_id_from_cf(dealer_url, id=id)
     context["dealer"] = dealer
     if request.method == 'GET':
