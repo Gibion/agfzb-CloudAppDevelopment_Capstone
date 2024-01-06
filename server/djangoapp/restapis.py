@@ -2,9 +2,10 @@ import requests
 import json
 from .models import CarDealer, DealerReview
 from requests.auth import HTTPBasicAuth
-from ibm_watson import NaturalLanguageUnderstandingV1
 from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
-from ibm_watson.natural_language_understanding_v1 import Features, SentimentOptions
+from ibm_watson import NaturalLanguageUnderstandingV1
+from ibm_watson.natural_language_understanding_v1 import Features,SentimentOptions
+import time
 
 
 # Create a `get_request` to make HTTP GET requests
@@ -78,66 +79,44 @@ def get_dealers_from_cf(url, **kwargs):
 # def get_dealer_by_id_from_cf(url, dealerId):
 # - Call get_request() with specified arguments
 # - Parse JSON results into a DealerView object list
-def get_dealer_by_id_from_cf(url, id, **kwargs):
-    results = []
-
-    # Call get_request with a URL parameter
-    json_result = get_request(url)
+def get_dealer_by_id_from_cf(url, id):
+    json_result = get_request(url, id=id)
+    print('json_result from line 54',json_result)
 
     if json_result:
-        # Get the row list in JSON as dealers
         dealers = json_result
-
-        # For each dealer object
-        for dealer in dealers:
-            # Get its content in `doc` object
-            dealer_doc = dealer
-            if dealer_doc["id"] == id:
-                # Create a CarDealer object with values in `doc` object
-                dealer_obj = CarDealer(address=dealer_doc["address"], 
-                                       city=dealer_doc["city"], 
-                                       full_name=dealer_doc["full_name"],
-                                       id=dealer_doc["id"], 
-                                       lat=dealer_doc["lat"], 
-                                       long=dealer_doc["long"],
-                                       short_name=dealer_doc["short_name"],
-                                       st=dealer_doc["st"], 
-                                       zip=dealer_doc["zip"])                    
-                results.append(dealer_obj)
-
-    return results[0]
+        
+    
+        dealer_doc = dealers[2]
+        dealer_obj = CarDealer(address=dealer_doc["address"], 
+                                city=dealer_doc["city"],
+                                id=dealer_doc["id"], 
+                                lat=dealer_doc["lat"], 
+                                long=dealer_doc["long"], 
+                                full_name=dealer_doc["full_name"],
+                                short_name=dealer_doc["short_name"],
+                                st=dealer_doc["st"], 
+                                zip=dealer_doc["zip"])
+    return dealer_obj
 
 def get_dealer_reviews_from_cf(url, **kwargs):
     results = []
-    id = kwargs.get("id")
-    if id:
-        json_result = get_request(url, id=id)
-    else:
-        json_result = get_request(url)
-    print(json_result,"96")
-    if json_result:
-        reviews = json_result["data"]["docs"]
-        for dealer_review in reviews:
-            review_obj = DealerReview(dealership=dealer_review["dealership"],
-                                   name=dealer_review["name"],
-                                   purchase=dealer_review["purchase"],
-                                   review=dealer_review["review"])
-            if "id" in dealer_review:
-                review_obj.id = dealer_review["id"]
-            if "purchase_date" in dealer_review:
-                review_obj.purchase_date = dealer_review["purchase_date"]
-            if "car_make" in dealer_review:
-                review_obj.car_make = dealer_review["car_make"]
-            if "car_model" in dealer_review:
-                review_obj.car_model = dealer_review["car_model"]
-            if "car_year" in dealer_review:
-                review_obj.car_year = dealer_review["car_year"]
-            
-            sentiment = analyze_review_sentiments(review_obj.review)
-            print(sentiment)
-            review_obj.sentiment = sentiment
-            results.append(review_obj)
-
+    json_result = get_request(url, id=kwargs['id'])
+    if(json_result):
+        dealer_reviews = json_result;
+        for dealer_review in dealer_reviews:
+            sentiment = analyze_review_sentiments(dealer_review['review'])
+            dealer_review_obj = DealerReview(dealership=dealer_review['dealership'], 
+                            name=dealer_review['name'],
+                            purchase=dealer_review['purchase'], 
+                            review=dealer_review['review'], 
+                            purchase_date=dealer_review['purchase_date'],
+                            car_make=dealer_review['car_make'], 
+                            car_model=dealer_review['car_model'], 
+                            car_year=dealer_review['car_year'],
+                            id=dealer_review['id'], 
+                            sentiment=sentiment)
+            results.append(dealer_review_obj)
     return results
 
 
@@ -145,28 +124,23 @@ def get_dealer_reviews_from_cf(url, **kwargs):
 # def analyze_review_sentiments(text):
 # - Call get_request() with specified arguments
 # - Get the returned sentiment label such as Positive or Negative
-def analyze_review_sentiments(dealer_review):
-# - Call get_request() with specified arguments
-# - Get the returned sentiment label such as Positive or Negative
-    apikey = ""
-    url = ""
-    
-    authenticator = IAMAuthenticator(apikey)
-    natural_language_understanding = NaturalLanguageUnderstandingV1(
-        version='2022-04-07',
-        authenticator=authenticator
-    )
-
+def analyze_review_sentiments(text):
+    url = "https://api.us-south.natural-language-understanding.watson.cloud.ibm.com/instances/bb3023b7-ff44-45bb-938a-1373a05af3ae"
+    api_key = "tsR0cp-DXyEHAKC8PMhfYtbM8Ek8q-LTqvpAjoAkNohx"
+    authenticator = IAMAuthenticator(api_key)
+    natural_language_understanding = NaturalLanguageUnderstandingV1(version='2021-08-01',authenticator=authenticator)
     natural_language_understanding.set_service_url(url)
-
-    response = natural_language_understanding.analyze(
-        text=dealer_review,
-        language='en',
-        features=Features(sentiment=SentimentOptions(targets=[dealer_review]))
-    ).get_result()
-
-    print(json.dumps(response, indent=2))
     
-    return response["sentiment"]["document"]["label"]
+    try:
+        response = natural_language_understanding.analyze(
+            text=text,
+            features=Features(sentiment=SentimentOptions(targets=[text]))
+        ).get_result()
+        label = response['sentiment']['document']['label']
+    except Exception as e:
+        print("Exception occurred during sentiment analysis:", str(e))
+        label = "unknown"
+    
+    return label
 
 
