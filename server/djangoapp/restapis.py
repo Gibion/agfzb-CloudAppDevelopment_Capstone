@@ -68,7 +68,7 @@ def get_dealers_from_cf(url, **kwargs):
             dealer_obj = CarDealer(address=dealer["address"], city=dealer["city"], full_name=dealer["full_name"],
                                    id=dealer["id"], lat=dealer["lat"], long=dealer["long"],
                                    short_name=dealer["short_name"],
-                                   st=dealer["st"], zip=dealer["zip"], state=dealer["state"])
+                                   st=dealer["st"], zip=dealer["zip"])
             results.append(dealer_obj)
     print(results)
     print("############################################")
@@ -102,8 +102,7 @@ def get_dealer_by_id_from_cf(url, id, **kwargs):
                                        long=dealer_doc["long"],
                                        short_name=dealer_doc["short_name"],
                                        st=dealer_doc["st"], 
-                                       zip=dealer_doc["zip"],
-                                       state=dealer["state"])                    
+                                       zip=dealer_doc["zip"])                    
                 results.append(dealer_obj)
 
     return results[0]
